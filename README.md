@@ -2,43 +2,63 @@
 
 An interactive live gameshow where groups guess anime titles from four visual clues — with optional real-time crowd participation from their phones.
 
-## What's In Here
+**[Deploy to Vercel →](https://vercel.com/new/clone?repository-url=https://github.com/JasonYCao/4pics1anime)**
 
-| File | Description |
-|------|-------------|
-| `4pics1anime.jsx` | The main gameshow app (React). Host dashboard + crowd play view. |
-| `4pics1anime_proposal.html` | A polished event proposal page with full breakdown of the format. |
+## Routes
 
-## Gameshow App
+| Route | Description |
+|-------|-------------|
+| `/` | Event proposal & landing page |
+| `/host` | Host dashboard — controls the game |
+| `/play` | Crowd play — scan QR to join from phone |
 
-### Host View (`#host`)
-- Reveal images one at a time for dramatic effect
-- Countdown timer with animated progress bar
-- Add/remove groups, award/deduct points, cycle through turns
-- Built-in question editor (supports emoji or image URLs)
-- Show/hide answers, view crowd guesses
+## Getting Started
 
-### Crowd View (`#play`)
-- Attendees scan a QR code — no app download required
-- Enter a display name, see revealed images, submit guesses
-- Completely optional — zero friction
+```bash
+npm install
+npm run dev
+```
 
-### How to Use
-1. Deploy the `.jsx` as a React component (or drop it into any React project)
-2. Open the app on your main display — that's the host screen
-3. Show the QR code for audience participation
-4. Add groups as they come up, reveal images, run the timer, award points
+Open `http://localhost:5173` to see the proposal page. Navigate to `/host` to run the game, and `/play` for the crowd view.
 
-## Proposal Page
+## Deploy to Vercel
 
-Open `4pics1anime_proposal.html` in any browser to see the full event proposal with:
-- Event concept & format breakdown
-- Show flow timeline
-- Crowd engagement tech specs
-- Stage & production requirements
-- Scalability guide (30 to 5,000+ attendees)
-- Sponsorship opportunities
-- 8-week planning timeline
+1. Push to GitHub
+2. Import the repo at [vercel.com/new](https://vercel.com/new)
+3. Vercel auto-detects Vite — just click Deploy
+4. Done. Share the `/play` URL (or QR code) with your audience.
+
+## How to Run the Gameshow
+
+1. Open `/host` on the main display — that's your control panel
+2. Add groups as they come up to the stage
+3. Click "Show QR / Guesses" to display the QR code for crowd participation
+4. Reveal images one at a time, start the timer, let them guess
+5. Hit "Show Answer", award points, then cycle to the next group or question
+
+## Project Structure
+
+```
+src/
+├── main.jsx              # Entry point
+├── App.jsx               # Router (/, /host, /play)
+├── styles.css            # Global styles & CSS vars
+├── components/
+│   ├── Glow.jsx          # Neon glow text
+│   ├── ImageCard.jsx     # Clue image card
+│   └── ScoreRow.jsx      # Scoreboard row
+├── data/
+│   └── questions.js      # Sample question bank
+├── hooks/
+│   └── useTimer.js       # Countdown timer hook
+├── lib/
+│   └── storage.js        # Host ↔ Crowd state sync
+└── pages/
+    ├── Host.jsx           # Host dashboard
+    ├── Play.jsx           # Crowd play view
+    ├── Proposal.jsx       # Landing / proposal page
+    └── Proposal.css       # Proposal styles
+```
 
 ## License
 
