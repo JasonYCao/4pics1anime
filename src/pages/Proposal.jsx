@@ -125,7 +125,7 @@ export default function Proposal() {
             <div className="tech-row"><div className="tech-label">Real-time</div><div className="tech-value">WebSocket connection for instant answer submission and live leaderboard updates.</div></div>
             <div className="tech-row"><div className="tech-label">Hosting</div><div className="tech-value">Cloud-hosted with auto-scaling. Handles hundreds to thousands of simultaneous players.</div></div>
             <div className="tech-row"><div className="tech-label">Admin</div><div className="tech-value">Host dashboard to advance rounds, reveal answers, trigger timers, and manage the question bank.</div></div>
-            <div className="tech-row"><div className="tech-label">Latency</div><div className="tech-value">&lt;200ms round-trip for answer submission. Leaderboard updates pushed in real-time.</div></div>
+            <div className="tech-row"><div className="tech-label">Latency</div><div className="tech-value">&lt;Leaderboard updates pushed in real-time.</div></div>
           </div>
 
           <div className="card-grid" style={{ marginTop: 24 }}>
@@ -134,100 +134,7 @@ export default function Proposal() {
             <Card emoji="📸" title="Share Moments" desc="Branded score screens for social media screenshots and bragging rights." />
           </div>
         </section>
-
-        <div className="divider" />
-
-        {/* ═══ PRODUCTION ═══ */}
-        <section>
-          <div className="section-label">04 — Stage & Production</div>
-          <h2 className="section-title">What we need on the day</h2>
-          <p className="section-body">
-            The setup is straightforward. A screen to show images, a sound system, buzzers for the stage
-            contestants, and internet for the crowd play system.
-          </p>
-
-          <div className="card-grid">
-            <Card emoji="🖥️" title="Display" desc="LED screen or projector (16:9, 1080p min) for images, answers, and the crowd leaderboard." />
-            <Card emoji="🔊" title="Audio" desc="Wireless mics for host + contestants. Sound system for anime OST clips and SFX." />
-            <Card emoji="🔴" title="Buzzers" desc="Physical or wireless buzzer system for on-stage contestants to lock in their answer." />
-            <Card emoji="🌐" title="Connectivity" desc="Hardwired ethernet for admin systems. Attendees use venue Wi-Fi or mobile data." />
-          </div>
-
-          <div className="tech-grid" style={{ marginTop: 24 }}>
-            <div className="tech-row"><div className="tech-label">Host / MC</div><div className="tech-value">Drives the energy, explains rules, interacts with contestants and crowd.</div></div>
-            <div className="tech-row"><div className="tech-label">Tech Op</div><div className="tech-value">Runs the admin dashboard — advances rounds, manages timers, monitors the web app.</div></div>
-            <div className="tech-row"><div className="tech-label">AV Tech</div><div className="tech-value">Manages display, audio, and lighting cues throughout the show.</div></div>
-            <div className="tech-row"><div className="tech-label">Stage Assists</div><div className="tech-value">Manage group flow on/off stage, distribute prizes, handle crowd logistics.</div></div>
-          </div>
-        </section>
-
-        <div className="divider" />
-
-        {/* ═══ SCALE ═══ */}
-        <section>
-          <div className="section-label">05 — Scalability</div>
-          <h2 className="section-title">It works at any size</h2>
-          <p className="section-body">
-            Same game, same format — just dial the production up or down. The web app auto-scales so
-            crowd participation works regardless of venue size.
-          </p>
-
-          <div className="scale-grid">
-            <div className="scale-card">
-              <div className="scale-size">S</div>
-              <div className="scale-label">30–100 people</div>
-              <div className="scale-desc">Club, bar, or community meetup. Single screen. Intimate and loud.</div>
-            </div>
-            <div className="scale-card">
-              <div className="scale-size">M</div>
-              <div className="scale-label">100–500 people</div>
-              <div className="scale-desc">Convention panel room. Dual screens recommended. Classic con energy.</div>
-            </div>
-            <div className="scale-card">
-              <div className="scale-size">L</div>
-              <div className="scale-label">500–5,000+</div>
-              <div className="scale-desc">Main stage. Full production — LED wall, pro AV, dedicated Wi-Fi AP.</div>
-            </div>
-          </div>
-        </section>
-
-        <div className="divider" />
-
-        {/* ═══ SPONSORS ═══ */}
-        <section>
-          <div className="section-label">06 — Sponsors & Prizes</div>
-          <h2 className="section-title">Natural integration, not interruption</h2>
-          <p className="section-body">
-            The format has clean sponsor integration points that feel organic — title sponsorship on all
-            screens, round branding, prize sponsorship, and branded social media screenshot frames that
-            attendees share themselves.
-          </p>
-
-          <div className="highlight-box">
-            <div className="hl-title">Prize Structure</div>
-            <strong>Stage winners</strong> get the grand prize package — figures, manga, streaming subs,
-            whatever sponsors provide. <strong>Top 3 crowd players</strong> get called to the stage for
-            recognition and prizes. A <strong>random draw</strong> from all crowd participants keeps
-            everyone engaged until the very end.
-          </div>
-        </section>
-
-        <div className="divider" />
-
-        {/* ═══ TIMELINE ═══ */}
-        <section>
-          <div className="section-label">07 — Timeline</div>
-          <h2 className="section-title">8 weeks to showtime</h2>
-
-          <div className="flow">
-            <FlowItem num="8w" color="var(--accent)" title="Concept Approval" desc="Green-light the event, lock the date." />
-            <FlowItem num="6w" color="var(--cyan)" title="Question Bank + Web App Dev" desc="Curate 60–80 questions across difficulty tiers. Build and load-test the crowd play system." />
-            <FlowItem num="4w" color="var(--gold)" title="Sponsor Confirmation" desc="Lock in sponsors, finalize prize packages." />
-            <FlowItem num="1w" color="var(--green)" title="Dry Run" desc="Full tech rehearsal with mock audience. Iron out timing and transitions." />
-            <FlowItem icon="🎬" color="var(--accent)" title="Event Day" desc="Let's go." />
-          </div>
-        </section>
-      </div>
+     </div>
 
       {/* ═══ CTA ═══ */}
       <div className="divider" />
@@ -242,7 +149,7 @@ export default function Proposal() {
 
       <footer>
         <p>4 Pictures, 1 Anime — Event Proposal v1.0 — Prepared for Anime North 2026</p>
-        <p style={{ marginTop: 8 }}>Confidential Draft</p>
+        <p style={{ marginTop: 8 }}>Jason Cao</p>
       </footer>
     </div>
   );
