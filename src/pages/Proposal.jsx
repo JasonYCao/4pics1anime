@@ -88,17 +88,18 @@ export default function Proposal() {
           <div className="section-label">02 — Show Format</div>
           <h2 className="section-title">How the show flows</h2>
           <p className="section-body">
-            Groups come up <strong>one at a time</strong>. The host reveals images, controls the timer,
-            and awards points. Between groups, the crowd leaderboard can go up, polls can run, and the
-            energy stays high. The whole thing runs about 60–90 minutes.
+            Three groups of contestants come up to the stage <strong>one at a time</strong>. Each group
+            faces three escalating questions — easy, medium, and hard — so every round builds in intensity.
+            The host reveals images, controls the timer, and awards points. Between groups, the crowd
+            leaderboard goes up, polls can run, and the energy stays high. The whole thing runs about 60–90 minutes.
           </p>
 
           <div className="flow">
             <FlowItem num="01" color="var(--accent)" title="Opening" time="~10 minutes" desc="Host intro, rules walkthrough, QR code goes up on the big screen for anyone who wants to play along." />
-            <FlowItem num="02" color="var(--cyan)" title="Round 1 — Easy" time="~15–20 minutes" desc="Iconic, well-known anime. Great warm-up. Think Naruto, Dragon Ball, Attack on Titan." />
-            <FlowItem num="03" color="var(--gold)" title="Round 2 — Medium" time="~15–20 minutes" desc="Trickier picks and more creative image angles. This is where people start second-guessing." />
-            <FlowItem num="04" color="var(--green)" title="Round 3 — Hard" time="~15–20 minutes" desc="Obscure titles, subtle visual cues, red herrings. Separates the real ones from the casuals." />
-            <FlowItem icon="⚡" color="var(--accent)" title="Finale — Lightning Round" time="~10–15 minutes" desc="Rapid-fire questions. Top crowd players announced. Grand winner crowned. Prizes go out." />
+            <FlowItem num="02" color="var(--cyan)" title="Round 1 — Contestant Group A" time="~15–20 minutes" desc="First group takes the stage. They face an Easy question (iconic anime), a Medium question (trickier picks), and a Hard question (obscure titles, red herrings). Points scale with difficulty." />
+            <FlowItem num="03" color="var(--gold)" title="Round 2 — Contestant Group B" time="~15–20 minutes" desc="Second group steps up with a fresh set of Easy, Medium, and Hard questions. The crowd plays along from their phones while the pressure mounts on stage." />
+            <FlowItem num="04" color="var(--green)" title="Round 3 — Contestant Group C" time="~15–20 minutes" desc="Final group gets their shot. Same Easy → Medium → Hard format. By now the audience knows the game and the energy is at its peak." />
+            <FlowItem icon="⚡" color="var(--accent)" title="Finale — Lightning Round" time="~10–15 minutes" desc="Rapid-fire questions open to all. Top crowd players announced. Grand winner crowned. Prizes go out." />
           </div>
         </section>
 

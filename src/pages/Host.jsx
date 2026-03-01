@@ -8,6 +8,15 @@ import ScoreRow from "../components/ScoreRow";
 
 const TIMER_DURATION = 30;
 
+const EMOJI_PALETTE = [
+  "🍜","🦊","📜","🌀","⚔️","👹","🌙","🗡️","🏴‍☠️","🍖","🧢","🌊",
+  "🔮","🐉","🥋","💥","📓","🍎","💀","👁️","🏐","🦅","👟","🏫",
+  "🧪","🤖","👨‍👦","⚙️","👊","🦸","🦲","💯","🌸","💎","🚲","⛩️",
+  "🎻","⭐","🎹","😢","🧊","👑","🐺","🌲","🃏","💪","🐜","🏔️",
+  "❓","🎭","🎯","🔥","💧","⚡","🌈","🎪","🎮","🏆","📸","📊",
+  "🦇","🧙","🚀","🌕","🐱","🐕","🦋","🌺","🎵","🎶","💫","✨",
+];
+
 // ── Inline style helpers ──
 const panelSection = {
   display: "flex", flexDirection: "column", gap: 6,
@@ -111,6 +120,31 @@ export default function Host() {
     if (currentGroup >= groups.length - 1) setCurrentGroup(Math.max(0, groups.length - 2));
   };
 
+  // ── Emoji picker state ──
+  const [emojiTarget, setEmojiTarget] = useState(null); // { qi, ii } or null
+
+  const handleImageUpload = (qi, ii, file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const nq = [...questions];
+      nq[qi] = { ...nq[qi], images: [...nq[qi].images] };
+      nq[qi].images[ii] = e.target.result;
+      setQuestions(nq);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const pickEmoji = (emoji) => {
+    if (!emojiTarget) return;
+    const { qi, ii } = emojiTarget;
+    const nq = [...questions];
+    nq[qi] = { ...nq[qi], images: [...nq[qi].images] };
+    nq[qi].images[ii] = emoji;
+    setQuestions(nq);
+    setEmojiTarget(null);
+  };
+
   // ── Question Editor ──
   if (editMode) {
     return (
@@ -120,18 +154,79 @@ export default function Host() {
             <Glow size="1.8rem">Question Editor</Glow>
             <button onClick={() => setEditMode(false)} style={btn("var(--cyan)")}>← Back to Game</button>
           </div>
+
+          {/* Emoji Picker Overlay */}
+          {emojiTarget && (
+            <div style={{
+              position: "fixed", inset: 0, zIndex: 1000,
+              background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center",
+            }} onClick={() => setEmojiTarget(null)}>
+              <div onClick={(e) => e.stopPropagation()} style={{
+                background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 16,
+                padding: 24, maxWidth: 400, width: "90%",
+              }}>
+                <div style={{ fontWeight: 700, color: "var(--accent)", marginBottom: 12, fontSize: "0.9rem" }}>
+                  Pick an Emoji — Q{emojiTarget.qi + 1} Image {emojiTarget.ii + 1}
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 4 }}>
+                  {EMOJI_PALETTE.map((em) => (
+                    <button key={em} onClick={() => pickEmoji(em)} style={{
+                      background: "none", border: "1px solid transparent", borderRadius: 8,
+                      fontSize: "1.5rem", padding: 6, cursor: "pointer",
+                      transition: "all 0.15s ease",
+                    }}
+                    onMouseEnter={(e) => { e.target.style.background = "var(--border)"; e.target.style.borderColor = "var(--accent)"; }}
+                    onMouseLeave={(e) => { e.target.style.background = "none"; e.target.style.borderColor = "transparent"; }}>
+                      {em}
+                    </button>
+                  ))}
+                </div>
+                <button onClick={() => setEmojiTarget(null)} style={{ ...btn("var(--text-muted)", true), marginTop: 12, width: "100%" }}>Cancel</button>
+              </div>
+            </div>
+          )}
+
           {questions.map((qq, qi) => (
             <div key={qi} style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 12, padding: 16, marginBottom: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                 <span style={{ color: "var(--accent)", fontWeight: 700 }}>Q{qi + 1}</span>
                 <button onClick={() => setQuestions(questions.filter((_, i) => i !== qi))} style={{ background: "none", border: "none", color: "var(--accent)", cursor: "pointer", fontSize: "0.8rem" }}>Remove</button>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginBottom: 8 }}>
-                {qq.images.map((img, ii) => (
-                  <input key={ii} value={img} onChange={(e) => { const nq = [...questions]; nq[qi] = { ...nq[qi], images: [...nq[qi].images] }; nq[qi].images[ii] = e.target.value; setQuestions(nq); }}
-                    style={inputStyle} placeholder={`Image ${ii + 1}`} />
-                ))}
+
+              {/* Image inputs with upload + emoji buttons */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+                {qq.images.map((img, ii) => {
+                  const isUrl = typeof img === "string" && (img.startsWith("http") || img.startsWith("data:"));
+                  return (
+                    <div key={ii} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "'Space Mono'" }}>
+                        Image {ii + 1}
+                      </div>
+                      {/* Preview */}
+                      {isUrl ? (
+                        <div style={{ width: "100%", aspectRatio: "16/9", borderRadius: 8, overflow: "hidden", border: "1px solid var(--border)", marginBottom: 4 }}>
+                          <img src={img} alt={`Q${qi + 1} img ${ii + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        </div>
+                      ) : (
+                        <div style={{ width: "100%", height: 48, borderRadius: 8, background: "var(--bg)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.8rem", marginBottom: 4 }}>
+                          {img || "❓"}
+                        </div>
+                      )}
+                      <div style={{ display: "flex", gap: 4 }}>
+                        <input value={isUrl ? "" : img} onChange={(e) => { const nq = [...questions]; nq[qi] = { ...nq[qi], images: [...nq[qi].images] }; nq[qi].images[ii] = e.target.value; setQuestions(nq); }}
+                          style={{ ...inputStyle, flex: 1, padding: "6px 8px", fontSize: "0.8rem" }} placeholder={isUrl ? "Image uploaded" : "Emoji or URL"} />
+                        <button onClick={() => setEmojiTarget({ qi, ii })} style={{ ...tinyBtn("var(--gold)"), fontSize: "1rem", padding: "4px 8px" }} title="Pick emoji">😀</button>
+                        <label style={{ ...tinyBtn("var(--cyan)"), fontSize: "0.65rem", padding: "4px 8px", display: "flex", alignItems: "center", cursor: "pointer" }} title="Upload image">
+                          📁
+                          <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleImageUpload(qi, ii, e.target.files[0])} />
+                        </label>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
+
+              {/* Hints */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginBottom: 8 }}>
                 {(qq.hints || ["", "", "", ""]).map((h, hi) => (
                   <input key={hi} value={h} onChange={(e) => { const nq = [...questions]; nq[qi] = { ...nq[qi], hints: [...(nq[qi].hints || ["", "", "", ""])] }; nq[qi].hints[hi] = e.target.value; setQuestions(nq); }}

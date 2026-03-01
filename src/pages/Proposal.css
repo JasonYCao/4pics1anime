@@ -26,9 +26,9 @@
   padding: 40px 24px; position: relative; overflow: hidden;
 }
 .hero::before {
-  content: ""; position: absolute; width: 600px; height: 600px; border-radius: 50%;
+  content: ""; position: absolute; width: 720px; height: 720px; border-radius: 50%;
   background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
-  top: 20%; left: 50%; transform: translate(-50%, -50%);
+  top: 22%; left: 50%; transform: translate(-50%, -50%);
   animation: glowPulse 4s ease-in-out infinite; pointer-events: none;
 }
 .hero::after {
@@ -37,34 +37,34 @@
   bottom: 10%; right: 15%; pointer-events: none; opacity: 0.5;
 }
 .hero-logo {
-  width: clamp(180px, 30vw, 300px); margin-bottom: 40px;
-  filter: drop-shadow(0 4px 20px rgba(0,0,0,0.5));
+  width: clamp(220px, 35vw, 380px); margin-bottom: 48px;
+  filter: drop-shadow(0 6px 30px rgba(0,0,0,0.6));
   animation: fadeIn 0.8s ease forwards, float 5s ease-in-out 1s infinite;
   position: relative; z-index: 1;
 }
 .hero-eyebrow {
-  font-family: "DM Mono", monospace; font-size: 0.75rem; color: var(--accent);
-  text-transform: uppercase; letter-spacing: 0.25em; margin-bottom: 16px;
+  font-family: "DM Mono", monospace; font-size: 0.85rem; color: var(--accent);
+  text-transform: uppercase; letter-spacing: 0.25em; margin-bottom: 20px;
   position: relative; z-index: 1;
 }
 .hero-title {
-  font-family: "Zen Dots", cursive; font-size: clamp(2.2rem, 6vw, 4.5rem);
-  color: var(--text-heading); line-height: 1.1; margin-bottom: 12px;
+  font-family: "Zen Dots", cursive; font-size: clamp(2.6rem, 7vw, 5.5rem);
+  color: var(--text-heading); line-height: 1.1; margin-bottom: 16px;
   position: relative; z-index: 1;
 }
 .hero-title .accent { color: var(--accent); }
 .hero-subtitle {
-  font-size: clamp(1rem, 2.2vw, 1.25rem); color: var(--text-muted);
-  font-weight: 300; max-width: 540px; margin-bottom: 40px;
+  font-size: clamp(1.1rem, 2.5vw, 1.4rem); color: var(--text-muted);
+  font-weight: 300; max-width: 600px; margin-bottom: 44px;
   position: relative; z-index: 1;
 }
 .hero-meta {
-  font-family: "DM Mono", monospace; font-size: 0.7rem;
+  font-family: "DM Mono", monospace; font-size: 0.8rem;
   color: var(--text-muted); letter-spacing: 0.1em;
   position: relative; z-index: 1;
 }
 .hero-meta span {
-  display: inline-block; padding: 4px 12px;
+  display: inline-block; padding: 6px 16px;
   border: 1px solid var(--border); border-radius: 100px; margin: 4px;
 }
 .hero-actions {
@@ -72,8 +72,8 @@
   position: relative; z-index: 1; flex-wrap: wrap; justify-content: center;
 }
 .hero-btn {
-  display: inline-block; padding: 14px 32px; border-radius: 100px;
-  font-family: "Outfit", sans-serif; font-weight: 700; font-size: 0.95rem;
+  display: inline-block; padding: 16px 36px; border-radius: 100px;
+  font-family: "Outfit", sans-serif; font-weight: 700; font-size: 1.05rem;
   transition: all 0.3s ease; letter-spacing: 0.03em; text-decoration: none;
 }
 .hero-btn.primary {
