@@ -56,6 +56,7 @@ export default function Host() {
   const [crowdGuesses, setCrowdGuesses] = useState([]);
   const [editMode, setEditMode] = useState(false);
   const [showCrowdPanel, setShowCrowdPanel] = useState(false);
+  const [uploading, setUploading] = useState(null); // "qi-ii" key or null
   const timer = useTimer(TIMER_DURATION, () => {});
 
   const q = questions[qIndex];
@@ -123,16 +124,26 @@ export default function Host() {
   // ── Emoji picker state ──
   const [emojiTarget, setEmojiTarget] = useState(null); // { qi, ii } or null
 
-  const handleImageUpload = (qi, ii, file) => {
+  const handleImageUpload = async (qi, ii, file) => {
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
+    const key = `${qi}-${ii}`;
+    setUploading(key);
+    try {
+      const res = await fetch(`/api/upload?filename=${encodeURIComponent(file.name)}`, {
+        method: "PUT",
+        body: file,
+      });
+      if (!res.ok) throw new Error("Upload failed");
+      const blob = await res.json();
       const nq = [...questions];
       nq[qi] = { ...nq[qi], images: [...nq[qi].images] };
-      nq[qi].images[ii] = e.target.result;
+      nq[qi].images[ii] = blob.url;
       setQuestions(nq);
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.error("Image upload error:", err);
+    } finally {
+      setUploading(null);
+    }
   };
 
   const pickEmoji = (emoji) => {
@@ -216,9 +227,9 @@ export default function Host() {
                         <input value={isUrl ? "" : img} onChange={(e) => { const nq = [...questions]; nq[qi] = { ...nq[qi], images: [...nq[qi].images] }; nq[qi].images[ii] = e.target.value; setQuestions(nq); }}
                           style={{ ...inputStyle, flex: 1, padding: "6px 8px", fontSize: "0.8rem" }} placeholder={isUrl ? "Image uploaded" : "Emoji or URL"} />
                         <button onClick={() => setEmojiTarget({ qi, ii })} style={{ ...tinyBtn("var(--gold)"), fontSize: "1rem", padding: "4px 8px" }} title="Pick emoji">😀</button>
-                        <label style={{ ...tinyBtn("var(--cyan)"), fontSize: "0.65rem", padding: "4px 8px", display: "flex", alignItems: "center", cursor: "pointer" }} title="Upload image">
-                          📁
-                          <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleImageUpload(qi, ii, e.target.files[0])} />
+                        <label style={{ ...tinyBtn("var(--cyan)"), fontSize: "0.65rem", padding: "4px 8px", display: "flex", alignItems: "center", cursor: "pointer", opacity: uploading === `${qi}-${ii}` ? 0.5 : 1 }} title="Upload image">
+                          {uploading === `${qi}-${ii}` ? "..." : "📁"}
+                          <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleImageUpload(qi, ii, e.target.files[0])} disabled={uploading !== null} />
                         </label>
                       </div>
                     </div>
