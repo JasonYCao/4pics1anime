@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import Proposal from "./pages/Proposal";
 import Host from "./pages/Host";
 import Play from "./pages/Play";
+import Show from "./pages/Show";
 
 export default function App() {
   return (
@@ -9,6 +10,7 @@ export default function App() {
       <Route path="/" element={<Proposal />} />
       <Route path="/host" element={<Host />} />
       <Route path="/play" element={<Play />} />
+      <Route path="/show" element={<Show />} />
     </Routes>
   );
 }

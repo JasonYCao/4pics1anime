@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "fix-images": "node scripts/normalize-source-images.mjs",
+    "images": "node scripts/build-questions-images.mjs",
+    "build": "node scripts/build-questions-images.mjs && vite build",
     "preview": "vite preview"
   },
   "keywords": [],
@@ -19,6 +21,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^5.1.4",
+    "sharp": "^0.34.5",
     "vite": "^7.3.1"
   }
 }

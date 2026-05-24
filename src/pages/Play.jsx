@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { loadGameState, saveCrowdGuess } from "../lib/storage";
+import { isAnswerCorrect } from "../lib/grading";
 import Glow from "../components/Glow";
 import ImageCard from "../components/ImageCard";
 
@@ -108,11 +109,14 @@ export default function Play() {
             <div style={{ textAlign: "center", padding: 20, background: "rgba(61,220,132,0.06)", border: "2px solid rgba(61,220,132,0.2)", borderRadius: 16, width: "100%", maxWidth: 340 }}>
               <div style={{ fontSize: "0.8rem", color: "var(--green)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Answer</div>
               <Glow size="1.8rem" color="var(--green)">{gameState.answer}</Glow>
-              {submitted && (
-                <div style={{ fontSize: "0.85rem", color: guess.toLowerCase() === gameState.answer.toLowerCase() ? "var(--green)" : "var(--accent)", marginTop: 8 }}>
-                  {guess.toLowerCase() === gameState.answer.toLowerCase() ? "🎉 You got it!" : `You guessed: ${guess}`}
-                </div>
-              )}
+              {submitted && (() => {
+                const correct = isAnswerCorrect(guess, gameState.answer);
+                return (
+                  <div style={{ fontSize: "0.85rem", color: correct ? "var(--green)" : "var(--accent)", marginTop: 8 }}>
+                    {correct ? "🎉 You got it!" : `You guessed: ${guess}`}
+                  </div>
+                );
+              })()}
             </div>
           ) : submitted ? (
             <div style={{ textAlign: "center", padding: 20, background: "rgba(0,212,255,0.06)", border: "1px solid rgba(0,212,255,0.2)", borderRadius: 16, width: "100%", maxWidth: 340 }}>

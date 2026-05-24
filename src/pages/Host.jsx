@@ -1,12 +1,64 @@
 import { useState, useEffect } from "react";
-import { SAMPLE_QUESTIONS } from "../data/questions";
+import {
+  BUNDLED_QUESTIONS,
+  SAMPLE_QUESTIONS,
+  TIER_POINTS,
+  PLAYTHROUGH_COMPOSITION,
+} from "../data/questions";
+import {
+  generatePlaythrough,
+  markUsed,
+  resetUsedIds,
+  getPlaythroughsRemaining,
+  getRemainingByTier,
+  getMaxPlaythroughs,
+} from "../lib/playthrough";
+
+const MAX_PLAYTHROUGHS = getMaxPlaythroughs();
 import { saveGameState, loadCrowdGuesses, clearCrowdGuesses } from "../lib/storage";
+import { isAnswerCorrect } from "../lib/grading";
 import { useTimer } from "../hooks/useTimer";
 import Glow from "../components/Glow";
 import ImageCard from "../components/ImageCard";
 import ScoreRow from "../components/ScoreRow";
 
-const TIMER_DURATION = 30;
+const DEFAULT_TIMER_SECONDS = 15;
+const CURRENT_PLAYTHROUGH_KEY = "fourpics:currentPlaythroughIds";
+
+// Restore the active playthrough across refreshes so we don't burn a fresh one.
+function loadCurrentPlaythrough() {
+  if (typeof window === "undefined") return null;
+  try {
+    const ids = JSON.parse(sessionStorage.getItem(CURRENT_PLAYTHROUGH_KEY));
+    if (!Array.isArray(ids) || ids.length === 0) return null;
+    const byId = new Map(BUNDLED_QUESTIONS.map((q) => [q.id, q]));
+    const resolved = ids.map((id) => byId.get(id)).filter(Boolean);
+    return resolved.length === ids.length ? resolved : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveCurrentPlaythrough(qs) {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(
+      CURRENT_PLAYTHROUGH_KEY,
+      JSON.stringify(qs.map((q) => q.id))
+    );
+  } catch {
+    // ignore
+  }
+}
+
+function clearCurrentPlaythrough() {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.removeItem(CURRENT_PLAYTHROUGH_KEY);
+  } catch {
+    // ignore
+  }
+}
 
 const EMOJI_PALETTE = [
   "🍜","🦊","📜","🌀","⚔️","👹","🌙","🗡️","🏴‍☠️","🍖","🧢","🌊",
@@ -45,7 +97,10 @@ const tinyBtn = (color) => ({
 });
 
 export default function Host() {
-  const [questions, setQuestions] = useState(SAMPLE_QUESTIONS);
+  const [questions, setQuestions] = useState(() => {
+    const restored = loadCurrentPlaythrough();
+    return restored || [];
+  });
   const [qIndex, setQIndex] = useState(0);
   const [revealed, setRevealed] = useState([false, false, false, false]);
   const [groups, setGroups] = useState([{ name: "Team 1", score: 0 }]);
@@ -57,25 +112,106 @@ export default function Host() {
   const [editMode, setEditMode] = useState(false);
   const [showCrowdPanel, setShowCrowdPanel] = useState(false);
   const [uploading, setUploading] = useState(null); // "qi-ii" key or null
-  const timer = useTimer(TIMER_DURATION, () => {});
+  const [playthroughsLeft, setPlaythroughsLeft] = useState(() =>
+    typeof window !== "undefined" ? getPlaythroughsRemaining() : 0
+  );
+  const [remainingByTier, setRemainingByTier] = useState(() =>
+    typeof window !== "undefined" ? getRemainingByTier() : { 1: 0, 2: 0, 3: 0 }
+  );
+  const [playthroughError, setPlaythroughError] = useState(null);
+  const [timerSeconds, setTimerSeconds] = useState(DEFAULT_TIMER_SECONDS);
+  const [autoReveal, setAutoReveal] = useState(false);
+
+  // When the timer hits 0 and auto-reveal is on: reveal the next image and
+  // restart the timer. Stops cleanly once all 4 are revealed — the answer
+  // is never auto-shown. Pause halts everything (onEnd doesn't fire while
+  // paused, so reveals only happen on a real 0-tick).
+  const timer = useTimer(timerSeconds, () => {
+    if (!autoReveal) return;
+    const idx = revealed.findIndex((r) => !r);
+    if (idx === -1) return; // already fully revealed
+    const next = [...revealed];
+    next[idx] = true;
+    setRevealed(next);
+    if (next.some((r) => !r)) {
+      // Defer so React processes the setRevealed update first.
+      setTimeout(() => {
+        timer.reset(timerSeconds);
+        timer.start();
+      }, 0);
+    }
+  });
 
   const q = questions[qIndex];
+  const currentTierPoints = q?.tier ? TIER_POINTS[q.tier] : 1;
+
+  // Generate a fresh playthrough, mark its questions as used, and persist it.
+  const startNewPlaythrough = ({ useEmojiFallback = false } = {}) => {
+    if (useEmojiFallback) {
+      setQuestions(SAMPLE_QUESTIONS);
+      setQIndex(0);
+      setRevealed([false, false, false, false]);
+      setShowAnswer(false);
+      setPlaythroughError(null);
+      clearCurrentPlaythrough();
+      return;
+    }
+    try {
+      const fresh = generatePlaythrough();
+      markUsed(fresh);
+      saveCurrentPlaythrough(fresh);
+      setQuestions(fresh);
+      setQIndex(0);
+      setRevealed([false, false, false, false]);
+      setShowAnswer(false);
+      setPlaythroughError(null);
+      setPlaythroughsLeft(getPlaythroughsRemaining());
+      setRemainingByTier(getRemainingByTier());
+    } catch (err) {
+      setPlaythroughError(err.message);
+    }
+  };
+
+  const handleResetUsed = () => {
+    if (!window.confirm("Reset all used-question tracking? Future playthroughs can repeat questions you've already played.")) return;
+    resetUsedIds();
+    clearCurrentPlaythrough();
+    setQuestions([]);
+    setPhase("lobby");
+    setQIndex(0);
+    setRevealed([false, false, false, false]);
+    setShowAnswer(false);
+    setPlaythroughError(null);
+    setPlaythroughsLeft(getPlaythroughsRemaining());
+    setRemainingByTier(getRemainingByTier());
+  };
   const playUrl = typeof window !== "undefined"
     ? `${window.location.origin}/play`
     : "/play";
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&bgcolor=07080f&color=00d4ff&data=${encodeURIComponent(playUrl)}`;
 
-  // Sync game state for crowd players
+  // Broadcast game state for the /show audience view (and /play, if used).
+  // Fires on every relevant change so the audience view stays in sync
+  // during lobby setup too — not just during "playing".
   useEffect(() => {
-    if (phase === "playing") {
-      saveGameState({
-        qIndex, revealed, phase,
-        answer: showAnswer ? q?.answer : null,
-        images: q?.images,
-        hints: q?.hints,
-      });
-    }
-  }, [qIndex, revealed, phase, showAnswer]);
+    saveGameState({
+      qIndex,
+      revealed,
+      phase,
+      answer: showAnswer ? q?.answer : null,
+      images: q?.images,
+      hints: q?.hints,
+      tier: q?.tier,
+      tierPoints: q?.tier ? TIER_POINTS[q.tier] : null,
+      totalQuestions: questions.length,
+      groups,
+      currentGroupName: groups[currentGroup]?.name ?? null,
+      hasQuestion: questions.length > 0,
+      timerRunning: timer.running,
+      timerTime: timer.time,
+      timerDuration: timerSeconds,
+    });
+  }, [qIndex, revealed, phase, showAnswer, q, questions.length, groups, currentGroup, timer.running, timer.time, timerSeconds]);
 
   // Poll crowd guesses
   useEffect(() => {
@@ -104,7 +240,7 @@ export default function Host() {
       setQIndex(next);
       setRevealed([false, false, false, false]);
       setShowAnswer(false);
-      timer.reset(TIMER_DURATION);
+      timer.reset(timerSeconds);
       setCrowdGuesses([]);
     }
   };
@@ -262,11 +398,40 @@ export default function Host() {
       <div style={{ width: 300, minWidth: 300, background: "var(--bg-panel)", borderRight: "1px solid var(--border)", padding: 20, display: "flex", flexDirection: "column", gap: 16, overflowY: "auto" }}>
         <Glow size="1.3rem" color="var(--cyan)">HOST CONTROLS</Glow>
 
+        {/* Playthrough */}
+        <div style={panelSection}>
+          <label style={labelStyle}>
+            Playthrough — {playthroughsLeft} of {MAX_PLAYTHROUGHS} left
+          </label>
+          <div style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.65rem", color: "var(--text-muted)", marginBottom: 4 }}>
+            T1 {remainingByTier[1]} · T2 {remainingByTier[2]} · T3 {remainingByTier[3]} unused
+          </div>
+          {questions === SAMPLE_QUESTIONS && (
+            <div style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.65rem", color: "var(--gold)", marginBottom: 4 }}>
+              ⚠ Emoji fallback active
+            </div>
+          )}
+          <button onClick={() => startNewPlaythrough()} style={btn("var(--green)", true)}>
+            {questions.length > 0 && questions !== SAMPLE_QUESTIONS ? "🔄 New Playthrough (10)" : "▶ Generate Playthrough (10)"}
+          </button>
+          <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+            <button onClick={() => startNewPlaythrough({ useEmojiFallback: true })} style={btn("var(--text-muted)", true)} title="Use the original 12 emoji questions">
+              Emoji set
+            </button>
+            <button onClick={handleResetUsed} style={btn("var(--accent)", true)} title="Forget used-question history">
+              Reset used
+            </button>
+          </div>
+          {playthroughError && (
+            <div style={{ color: "var(--accent)", fontSize: "0.7rem", marginTop: 6, fontFamily: "'Space Mono', monospace" }}>{playthroughError}</div>
+          )}
+        </div>
+
         {/* Phase */}
         <div style={panelSection}>
           <label style={labelStyle}>Phase</label>
           {phase === "lobby" ? (
-            <button onClick={() => { setPhase("playing"); timer.reset(TIMER_DURATION); clearCrowdGuesses(); }} style={btn("var(--green)")}>▶ Start Game</button>
+            <button onClick={() => { setPhase("playing"); timer.reset(timerSeconds); clearCrowdGuesses(); }} style={btn("var(--green)")} disabled={questions.length === 0}>▶ Start Game</button>
           ) : (
             <div style={{ display: "flex", gap: 6 }}>
               <button onClick={() => setPhase("lobby")} style={btn("var(--accent)", true)}>Reset</button>
@@ -305,12 +470,40 @@ export default function Host() {
         {/* Timer */}
         <div style={panelSection}>
           <label style={labelStyle}>Timer: <span style={{ color: timer.time <= 5 ? "var(--accent)" : "var(--gold)", fontFamily: "'Space Mono'" }}>{timer.time}s</span></label>
-          <div style={{ display: "flex", gap: 6 }}>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
+            <span style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.65rem", color: "var(--text-muted)", letterSpacing: "0.1em" }}>SPEED</span>
+            <input
+              type="number"
+              min="1"
+              max="60"
+              value={timerSeconds}
+              onChange={(e) => {
+                const n = Math.max(1, Math.min(60, parseInt(e.target.value, 10) || 1));
+                setTimerSeconds(n);
+                if (!timer.running) timer.reset(n);
+              }}
+              style={{ ...inputStyle, padding: "4px 8px", width: 56, fontSize: "0.85rem", textAlign: "center" }}
+            />
+            <span style={{ fontFamily: "'Space Mono', monospace", fontSize: "0.7rem", color: "var(--text-muted)" }}>sec</span>
+          </div>
+
+          <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6, fontFamily: "'Rajdhani', sans-serif", fontSize: "0.8rem", color: autoReveal ? "var(--cyan)" : "var(--text-muted)", cursor: "pointer" }}>
+            <input
+              type="checkbox"
+              checked={autoReveal}
+              onChange={(e) => setAutoReveal(e.target.checked)}
+              style={{ accentColor: "var(--cyan)", cursor: "pointer" }}
+            />
+            Auto-reveal images
+          </label>
+
+          <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
             {!timer.running
               ? <button onClick={timer.start} style={btn("var(--green)", true)}>▶ Start</button>
               : <button onClick={timer.pause} style={btn("var(--gold)", true)}>⏸ Pause</button>
             }
-            <button onClick={() => timer.reset(TIMER_DURATION)} style={btn("var(--text-muted)", true)}>↺ Reset</button>
+            <button onClick={() => timer.reset(timerSeconds)} style={btn("var(--text-muted)", true)}>↺ Reset</button>
           </div>
         </div>
 
@@ -330,8 +523,8 @@ export default function Host() {
               <span onClick={() => setCurrentGroup(i)} style={{ flex: 1, color: i === currentGroup ? "var(--cyan)" : "var(--text)", fontWeight: i === currentGroup ? 700 : 400, fontSize: "0.85rem", cursor: "pointer" }}>
                 {i === currentGroup ? "▸ " : ""}{g.name} ({g.score}pts)
               </span>
-              <button onClick={() => awardPoints(i, 100)} style={tinyBtn("var(--green)")}>+100</button>
-              <button onClick={() => awardPoints(i, -100)} style={tinyBtn("var(--accent)")}>-100</button>
+              <button onClick={() => awardPoints(i, currentTierPoints)} style={tinyBtn("var(--green)")} title={`Award ${currentTierPoints}pt (Tier ${q?.tier ?? "?"})`}>+{currentTierPoints}</button>
+              <button onClick={() => awardPoints(i, -currentTierPoints)} style={tinyBtn("var(--accent)")} title={`Subtract ${currentTierPoints}pt`}>-{currentTierPoints}</button>
               <button onClick={() => removeGroup(i)} style={tinyBtn("var(--text-muted)")}>✕</button>
             </div>
           ))}
@@ -359,16 +552,34 @@ export default function Host() {
           <Glow size="clamp(1.8rem, 4vw, 3rem)" color="var(--accent)">4 PICTURES, 1 ANIME</Glow>
           <div style={{ fontFamily: "'Space Mono', monospace", color: "var(--text-muted)", fontSize: "0.75rem", marginTop: 4 }}>
             QUESTION {qIndex + 1} OF {questions.length}
+            {q?.tier && (
+              <span style={{ color: "var(--cyan)", marginLeft: 12 }}>
+                · TIER {q.tier} ({currentTierPoints}pt)
+              </span>
+            )}
             {phase === "playing" && <span style={{ color: "var(--green)", marginLeft: 12 }}>● LIVE</span>}
           </div>
         </div>
+
+        {/* Empty state when no playthrough is loaded */}
+        {questions.length === 0 && (
+          <div style={{ textAlign: "center", padding: "40px 20px", border: "1px dashed var(--border)", borderRadius: 16, maxWidth: 480, margin: "0 auto" }}>
+            <div style={{ fontSize: "2.5rem", marginBottom: 12 }}>🎲</div>
+            <div style={{ color: "var(--text)", fontFamily: "'Rajdhani'", fontSize: "1.1rem", marginBottom: 8 }}>No playthrough yet</div>
+            <div style={{ color: "var(--text-muted)", fontSize: "0.85rem", marginBottom: 16, fontFamily: "'Rajdhani'" }}>
+              Each playthrough is 10 rounds: 5 × Tier 1 (1pt) + 3 × Tier 2 (2pt) + 2 × Tier 3 (3pt).<br/>
+              Up to {MAX_PLAYTHROUGHS} unique playthroughs from the catalog.
+            </div>
+            <button onClick={() => startNewPlaythrough()} style={btn("var(--green)")}>Generate Playthrough</button>
+          </div>
+        )}
 
         {/* Timer Bar */}
         {timer.running && (
           <div style={{ height: 4, background: "var(--border)", borderRadius: 2, marginBottom: 20, overflow: "hidden" }}>
             <div style={{
               height: "100%",
-              width: `${(timer.time / TIMER_DURATION) * 100}%`,
+              width: `${(timer.time / timerSeconds) * 100}%`,
               background: timer.time <= 5 ? "var(--accent)" : "linear-gradient(90deg, var(--cyan), var(--green))",
               borderRadius: 2,
               transition: "width 1s linear",
@@ -378,11 +589,13 @@ export default function Host() {
         )}
 
         {/* 4 Images Grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "clamp(12px, 2vw, 24px)", maxWidth: 700, margin: "0 auto", width: "100%" }}>
-          {q?.images.map((img, i) => (
-            <ImageCard key={`${qIndex}-${i}`} content={img} hint={q.hints?.[i]} revealed={revealed[i]} index={i} />
-          ))}
-        </div>
+        {questions.length > 0 && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "clamp(12px, 2vw, 24px)", maxWidth: 700, margin: "0 auto", width: "100%" }}>
+            {q?.images?.map((img, i) => (
+              <ImageCard key={`${qIndex}-${i}`} content={img} hint={q.hints?.[i]} revealed={revealed[i]} index={i} />
+            ))}
+          </div>
+        )}
 
         {/* Timer Display */}
         {timer.running && (
@@ -436,7 +649,7 @@ export default function Host() {
                   {crowdGuesses.map((g, i) => (
                     <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", borderBottom: "1px solid var(--border)", fontSize: "0.8rem" }}>
                       <span style={{ color: "var(--cyan)" }}>{g.name}</span>
-                      <span style={{ color: g.guess?.toLowerCase() === q?.answer?.toLowerCase() ? "var(--green)" : "var(--text)" }}>{g.guess}</span>
+                      <span style={{ color: isAnswerCorrect(g.guess, q?.answer) ? "var(--green)" : "var(--text)" }}>{g.guess}</span>
                     </div>
                   ))}
                 </div>

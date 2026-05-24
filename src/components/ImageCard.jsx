@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+
 const COLORS = ["var(--accent)", "var(--cyan)", "var(--gold)", "var(--green)"];
 
 export default function ImageCard({ content, hint, revealed, index }) {
@@ -5,6 +7,15 @@ export default function ImageCard({ content, hint, revealed, index }) {
   const isUrl =
     typeof content === "string" &&
     (content.startsWith("http") || content.startsWith("data:") || content.startsWith("/"));
+
+  const [imgError, setImgError] = useState(false);
+  // Reset error state whenever the underlying image changes.
+  useEffect(() => {
+    setImgError(false);
+  }, [content]);
+
+  const showImage = isUrl && !imgError;
+  const showHintFallback = isUrl && imgError;
 
   return (
     <div
@@ -27,15 +38,19 @@ export default function ImageCard({ content, hint, revealed, index }) {
         alignItems: "center",
         justifyContent: "center",
         flexDirection: "column",
+        padding: showHintFallback ? "16px" : 0,
         cursor: "default",
       }}
     >
       {revealed ? (
         <>
-          {isUrl ? (
+          {showImage && (
             <img
               src={content}
               alt={hint}
+              loading="lazy"
+              decoding="async"
+              onError={() => setImgError(true)}
               style={{
                 width: "100%",
                 height: "100%",
@@ -45,7 +60,47 @@ export default function ImageCard({ content, hint, revealed, index }) {
                 left: 0,
               }}
             />
-          ) : (
+          )}
+          {showHintFallback && (
+            <>
+              <span
+                style={{
+                  fontFamily: "'Space Mono', monospace",
+                  fontSize: "0.6rem",
+                  color: accent,
+                  opacity: 0.7,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.15em",
+                  marginBottom: 8,
+                }}
+              >
+                Clue {index + 1}
+              </span>
+              <span
+                style={{
+                  fontFamily: "'Rajdhani', sans-serif",
+                  fontSize: "clamp(0.85rem, 1.6vw, 1.05rem)",
+                  color: "var(--text)",
+                  textAlign: "center",
+                  lineHeight: 1.3,
+                }}
+              >
+                {hint || "Image pending"}
+              </span>
+              <span
+                style={{
+                  fontFamily: "'Space Mono', monospace",
+                  fontSize: "0.55rem",
+                  color: "var(--text-muted)",
+                  opacity: 0.5,
+                  marginTop: 10,
+                }}
+              >
+                (no image yet)
+              </span>
+            </>
+          )}
+          {!isUrl && (
             <span
               style={{
                 fontSize: "clamp(2.5rem, 6vw, 5rem)",
