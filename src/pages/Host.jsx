@@ -510,8 +510,14 @@ export default function Host() {
         {/* Answer */}
         <div style={panelSection}>
           <label style={labelStyle}>Answer</label>
+          {q?.answer && (
+            <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 6, fontFamily: "'Space Mono', monospace", fontSize: "0.7rem" }} title="Always visible to host only — audience views still gated by the button below">
+              <span style={{ color: "var(--text-muted)", letterSpacing: "0.12em" }}>HOST ONLY:</span>
+              <span style={{ color: "var(--gold)", fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, fontSize: "0.95rem" }}>{q.answer}</span>
+            </div>
+          )}
           <button onClick={() => setShowAnswer(!showAnswer)} style={btn(showAnswer ? "var(--green)" : "var(--accent)")}>
-            {showAnswer ? `✓ ${q?.answer}` : "Show Answer"}
+            {showAnswer ? "✓ Revealed to audience" : "Show Answer to audience"}
           </button>
         </div>
 
